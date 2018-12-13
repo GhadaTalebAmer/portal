@@ -1,0 +1,1541 @@
+---
+title: "Sexual and Domestic Violence Portal"
+author: "Ghada Amer"
+date: "December 4, 2018"
+output: html_document
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(shiny)
+library(tidyverse)
+library(tidytext)
+library(ggplot2)
+library(shinythemes)
+library(leaflet)
+library(RColorBrewer)
+library(leaflet.extras)
+library(DT)
+library(tidyverse)
+library(ggplot2)
+library(knitr)
+library(formattable)
+library(janitor)
+library(readr)
+library(dplyr)
+library(shiny)
+library(devtools)
+library(leaflet)
+library(RColorBrewer)
+library(leaflet.extras)
+library(haven)
+library(stringr)
+library(kableExtra)
+library(rebus)
+library(lubridate)
+library(knitr)
+
+```
+
+
+```{r}
+unicef <- read_csv("sample_data.csv") 
+```
+
+```{r}
+
+
+
+dhs_2012 <- read_spss("dhs_2012.sav")
+
+```
+
+
+```{r}
+
+sgbv <- read_csv("sgbv_services_institutions.csv") 
+```
+
+
+```{r}
+
+dhs_2007 <- read_spss("dhs_2007.sav")
+dhs_2002 <- read_spss("dhs_2002.sav")
+
+```
+
+```{r}
+
+dhs_2012_2 <-
+  dhs_2012 %>% 
+  select(CASEID, V007, V012, V013, V024, V044, V106, V190, V501, starts_with("V744"), starts_with("D"), starts_with("MV744"))
+
+
+dhs_2007_2 <-
+  dhs_2007 %>% 
+  select(CASEID, V007, V012, V013, V024, V044, V106, V190, V501, starts_with("V744"), starts_with("D"), starts_with("MV744"))
+
+dhs_2002_2 <- 
+  dhs_2002 %>% 
+  select(CASEID, V007, V012, V013, V024, V044, V106, V501, starts_with("V744"), starts_with("MV7"))
+
+
+```
+
+```{r 2012}
+
+justification_2012 <-
+  dhs_2012_2 %>% 
+  select("CASEID", 
+         "Year of Interview" = "V007",
+         "Age" = "V012", 
+         "Age Group" = "V013", 
+         "Education Level" = "V106", 
+         "Region" = "V024",  
+         "Selected for Domestic Violence Module" = "V044", 
+         "Marital Status" = "V501",
+        "A" = "V744A",
+         "B" = "V744B",
+          "C" = "V744C",
+          "D" = "V744D",
+          "E" = "V744E") %>% 
+  mutate(A = case_when(
+    A == "0" ~ "No",
+    A == "1" ~ "Yes",
+    A == "8" ~ "Don't Know")) %>% 
+   mutate(B = case_when(
+    B == "0" ~ "No",
+    B == "1" ~ "Yes",
+    B == "8" ~ "Don't Know")) %>% 
+   mutate(C = case_when(
+    C == "0" ~ "No",
+    C == "1" ~ "Yes",
+    C == "8" ~ "Don't Know")) %>% 
+   mutate(D = case_when(
+    D == "0" ~ "No",
+    D == "1" ~ "Yes",
+    D == "8" ~ "Don't Know")) %>% 
+   mutate(E = case_when(
+    E == "0" ~ "No",
+    E == "1" ~ "Yes",
+    E == "8" ~ "Don't Know")) %>% 
+  mutate(`Age Group` = case_when(
+    `Age Group` == "1" ~ "15-19",
+    `Age Group` == "2" ~ "20-24",
+     `Age Group` == "3" ~ "25-29",
+     `Age Group` == "4" ~ "30-34",
+     `Age Group` == "5" ~ "35-39",
+     `Age Group` == "6" ~ "40-44",
+     `Age Group` == "7" ~ "45-49")) %>% 
+  mutate(`Education Level` = case_when(
+    `Education Level` == "0" ~ "No Education",
+    `Education Level` == "1" ~ "Primary",
+    `Education Level` == "2" ~ "Secondary",
+    `Education Level` == "3" ~ "Higher"))
+
+justification_2012$`Education Level` <- 
+  factor(justification_2012$`Education Level`, levels = c("No Education", "Primary", "Secondary", "Higher"))
+
+
+
+
+
+justification_2012 %>% 
+  filter(!A == "Don't Know") %>% 
+  group_by(A, `Age Group`, `Education Level`) %>% 
+  count() %>% 
+  ggplot(aes(x = `Age Group`, y = n, fill = A)) + 
+  geom_col() + 
+  facet_wrap(~`Education Level`, scales = "fixed", shrink = TRUE, nrow = 2) +
+  theme_light() + 
+          labs(title = "Wife-Beating Justification: A",
+               subtitle = "by ..",
+               x = "Age Group",
+               y = "Number of Respondents",
+               fill = "Response")  +
+          scale_fill_manual("Response", values = c("Yes" = "deepskyblue4", "No" = "skyblue2")) +
+  theme(title = element_text(size = 12, colour = "steelblue4", face = "bold"),
+        legend.text = element_text(size = 10, colour = "grey55"),
+                strip.text = element_text(size = 12, face = "bold"),
+                panel.grid = element_line(colour = "lightgray"),
+                legend.title = element_text(size = 12, colour = "steelblue4"),
+                legend.justification = c("right", "top"),
+                legend.position = "right",
+                axis.title.x = element_text(size = 12, vjust = -0.4, colour = "steelblue4"), 
+                axis.title.y = element_text(size = 12, vjust = 0.4, colour = "steelblue4"))
+
+
+justification_2012 %>% 
+  filter(!B == "Don't Know") %>% 
+  group_by(B, `Age Group`, `Education Level`) %>% 
+  count() %>% 
+  ggplot(aes(x = `Age Group`, y = n, fill = B)) + 
+  geom_col() + 
+  facet_wrap(~`Education Level`, scales = "fixed", shrink = TRUE, nrow = 2) +
+  theme_light() + 
+          labs(title = "Wife-Beating Justification: B",
+               subtitle = "by ..",
+               x = "Age Group",
+               y = "Number of Respondents",
+               fill = "Response")  +
+          scale_fill_manual("Response", values = c("Yes" = "deepskyblue4", "No" = "skyblue2")) +
+  theme(title = element_text(size = 12, colour = "steelblue4", face = "bold"),
+        legend.text = element_text(size = 10, colour = "grey55"),
+                strip.text = element_text(size = 12, face = "bold"),
+                panel.grid = element_line(colour = "lightgray"),
+                legend.title = element_text(size = 12, colour = "steelblue4"),
+                legend.justification = c("right", "top"),
+                legend.position = "right",
+                axis.title.x = element_text(size = 12, vjust = -0.4, colour = "steelblue4"), 
+                axis.title.y = element_text(size = 12, vjust = 0.4, colour = "steelblue4"))
+
+```
+
+```{r}
+
+justification_2012 %>% 
+  filter(!C == "Don't Know") %>% 
+  group_by(C, `Age Group`, `Education Level`) %>% 
+  count() %>% 
+  ggplot(aes(x = `Age Group`, y = n, fill = C)) + 
+  geom_col() + 
+  facet_wrap(~`Education Level`, scales = "fixed", shrink = TRUE, nrow = 2) +
+  theme_light() + 
+          labs(title = "Wife-Beating Justification: C",
+               subtitle = "by ..",
+               x = "Age Group",
+               y = "Number of Respondents",
+               fill = "Response")  +
+          scale_fill_manual("Response", values = c("Yes" = "deepskyblue4", "No" = "skyblue2")) +
+  theme(title = element_text(size = 12, colour = "steelblue4", face = "bold"),
+        legend.text = element_text(size = 10, colour = "grey55"),
+                strip.text = element_text(size = 12, face = "bold"),
+                panel.grid = element_line(colour = "lightgray"),
+                legend.title = element_text(size = 12, colour = "steelblue4"),
+                legend.justification = c("right", "top"),
+                legend.position = "right",
+                axis.title.x = element_text(size = 12, vjust = -0.4, colour = "steelblue4"), 
+                axis.title.y = element_text(size = 12, vjust = 0.4, colour = "steelblue4"))
+```
+
+```{r}
+justification_2012 %>% 
+  filter(!E == "Don't Know") %>% 
+  group_by(E, `Age Group`, `Education Level`) %>% 
+  count() %>% 
+  ggplot(aes(x = `Age Group`, y = n, fill = E)) + 
+  geom_col() + 
+  facet_wrap(~`Education Level`, scales = "fixed", shrink = TRUE, nrow = 2) +
+  theme_light() + 
+          labs(title = "Wife-Beating Justification: E",
+               subtitle = "by ..",
+               x = "Age Group",
+               y = "Number of Respondents",
+               fill = "Response")  +
+          scale_fill_manual("Response", values = c("Yes" = "deepskyblue4", "No" = "skyblue2")) +
+  theme(title = element_text(size = 12, colour = "steelblue4", face = "bold"),
+        legend.text = element_text(size = 10, colour = "grey55"),
+                strip.text = element_text(size = 12, face = "bold"),
+                panel.grid = element_line(colour = "lightgray"),
+                legend.title = element_text(size = 12, colour = "steelblue4"),
+                legend.justification = c("right", "top"),
+                legend.position = "right",
+                axis.title.x = element_text(size = 12, vjust = -0.4, colour = "steelblue4"), 
+                axis.title.y = element_text(size = 12, vjust = 0.4, colour = "steelblue4"))
+```
+
+
+```{r}
+
+  
+justification_2007 <- 
+  dhs_2007_2 %>% 
+  select("CASEID", 
+         "Year of Interview" = "V007",
+         "Age" = "V012", 
+         "Age Group" = "V013", 
+         "Education Level" = "V106", 
+         "Region" = "V024",  
+         "Selected for Domestic Violence Module" = "V044", 
+         "Marital Status" = "V501",
+         "A" = "V744A",
+         "B" = "V744B",
+          "C" = "V744C",
+          "D" = "V744D",
+          "E" = "V744E") %>% 
+  mutate(A = case_when(
+    A == "0" ~ "No",
+    A == "1" ~ "Yes",
+    A == "8" ~ "Don't Know")) %>% 
+   mutate(B = case_when(
+    B == "0" ~ "No",
+    B == "1" ~ "Yes",
+    B == "8" ~ "Don't Know")) %>% 
+   mutate(C = case_when(
+    C == "0" ~ "No",
+    C == "1" ~ "Yes",
+    C == "8" ~ "Don't Know")) %>% 
+   mutate(D = case_when(
+    D == "0" ~ "No",
+    D == "1" ~ "Yes",
+    D == "8" ~ "Don't Know")) %>% 
+   mutate(E = case_when(
+    E == "0" ~ "No",
+    E == "1" ~ "Yes",
+    E == "8" ~ "Don't Know")) %>% 
+  mutate(`Age Group` = case_when(
+    `Age Group` == "1" ~ "15-19",
+    `Age Group` == "2" ~ "20-24",
+     `Age Group` == "3" ~ "25-29",
+     `Age Group` == "4" ~ "30-34",
+     `Age Group` == "5" ~ "35-39",
+     `Age Group` == "6" ~ "40-44",
+     `Age Group` == "7" ~ "45-49")) %>% 
+  mutate(`Education Level` = case_when(
+    `Education Level` == "0" ~ "No Education",
+    `Education Level` == "1" ~ "Primary",
+    `Education Level` == "2" ~ "Secondary",
+    `Education Level` == "3" ~ "Higher"))
+
+justification_2007$`Education Level` <- 
+  factor(justification_2007$`Education Level`, levels = c("No Education", "Primary", "Secondary", "Higher"))
+
+
+write_rds(justification_2007, "justification_07.rds")
+
+A_2007 <- 
+justification_2007 %>% 
+  filter(!A == "Don't Know") %>% 
+  group_by(A, `Age Group`, `Education Level`) %>% 
+  count() %>% 
+  ggplot(aes(x = `Age Group`, y = n, fill = A)) + 
+  geom_col() + 
+  facet_wrap(~`Education Level`, scales = "fixed", shrink = TRUE, nrow = 2) +
+  theme_light() + 
+          labs(title = "Wife-Beating Justification: A",
+               subtitle = "by ..",
+               x = "Age Group",
+               y = "Number of Respondents",
+               fill = "Response")  +
+          scale_fill_manual("Response", values = c("Yes" = "deepskyblue4", "No" = "skyblue2")) +
+  theme(title = element_text(size = 12, colour = "steelblue4", face = "bold"),
+        legend.text = element_text(size = 10, colour = "grey55"),
+                strip.text = element_text(size = 12, face = "bold"),
+                panel.grid = element_line(colour = "lightgray"),
+                legend.title = element_text(size = 12, colour = "steelblue4"),
+                legend.justification = c("right", "top"),
+                legend.position = "right",
+                axis.title.x = element_text(size = 12, vjust = -0.4, colour = "steelblue4"), 
+                axis.title.y = element_text(size = 12, vjust = 0.4, colour = "steelblue4"))
+
+B_2007 <-
+justification_2007 %>% 
+  filter(!B == "Don't Know") %>% 
+  group_by(B, `Age Group`, `Education Level`) %>% 
+  count() %>% 
+  ggplot(aes(x = `Age Group`, y = n, fill = B)) + 
+  geom_col() + 
+  facet_wrap(~`Education Level`, scales = "fixed", shrink = TRUE, nrow = 2) +
+  theme_light() + 
+          labs(title = "Wife-Beating Justification: B",
+               subtitle = "by ..",
+               x = "Age Group",
+               y = "Number of Respondents",
+               fill = "Response")  +
+          scale_fill_manual("Response", values = c("Yes" = "deepskyblue4", "No" = "skyblue2")) +
+  theme(title = element_text(size = 12, colour = "steelblue4", face = "bold"),
+        legend.text = element_text(size = 10, colour = "grey55"),
+                strip.text = element_text(size = 12, face = "bold"),
+                panel.grid = element_line(colour = "lightgray"),
+                legend.title = element_text(size = 12, colour = "steelblue4"),
+                legend.justification = c("right", "top"),
+                legend.position = "right",
+                axis.title.x = element_text(size = 12, vjust = -0.4, colour = "steelblue4"), 
+                axis.title.y = element_text(size = 12, vjust = 0.4, colour = "steelblue4"))
+
+C_2007 <-
+justification_2007 %>% 
+  filter(!C == "Don't Know") %>% 
+  group_by(C, `Age Group`, `Education Level`) %>% 
+  count() %>% 
+  ggplot(aes(x = `Age Group`, y = n, fill = C)) + 
+  geom_col() + 
+  facet_wrap(~`Education Level`, scales = "fixed", shrink = TRUE, nrow = 2) +
+  theme_light() + 
+          labs(title = "Wife-Beating Justification: C",
+               subtitle = "by ..",
+               x = "Age Group",
+               y = "Number of Respondents",
+               fill = "Response")  +
+          scale_fill_manual("Response", values = c("Yes" = "deepskyblue4", "No" = "skyblue2")) +
+  theme(title = element_text(size = 12, colour = "steelblue4", face = "bold"),
+        legend.text = element_text(size = 10, colour = "grey55"),
+                strip.text = element_text(size = 12, face = "bold"),
+                panel.grid = element_line(colour = "lightgray"),
+                legend.title = element_text(size = 12, colour = "steelblue4"),
+                legend.justification = c("right", "top"),
+                legend.position = "right",
+                axis.title.x = element_text(size = 12, vjust = -0.4, colour = "steelblue4"), 
+                axis.title.y = element_text(size = 12, vjust = 0.4, colour = "steelblue4"))
+
+D_2007 <-
+justification_2007 %>% 
+  filter(!D == "Don't Know") %>% 
+  group_by(D, `Age Group`, `Education Level`) %>% 
+  count() %>% 
+  ggplot(aes(x = `Age Group`, y = n, fill = D)) + 
+  geom_col() + 
+  facet_wrap(~`Education Level`, scales = "fixed", shrink = TRUE, nrow = 2) +
+  theme_light() + 
+          labs(title = "Wife-Beating Justification: D",
+               subtitle = "by ..",
+               x = "Age Group",
+               y = "Number of Respondents",
+               fill = "Response")  +
+          scale_fill_manual("Response", values = c("Yes" = "deepskyblue4", "No" = "skyblue2")) +
+  theme(title = element_text(size = 12, colour = "steelblue4", face = "bold"),
+        legend.text = element_text(size = 10, colour = "grey55"),
+                strip.text = element_text(size = 12, face = "bold"),
+                panel.grid = element_line(colour = "lightgray"),
+                legend.title = element_text(size = 12, colour = "steelblue4"),
+                legend.justification = c("right", "top"),
+                legend.position = "right",
+                axis.title.x = element_text(size = 12, vjust = -0.4, colour = "steelblue4"), 
+                axis.title.y = element_text(size = 12, vjust = 0.4, colour = "steelblue4"))
+
+E_2007 <-
+justification_2007 %>% 
+  filter(!E == "Don't Know") %>% 
+  group_by(E, `Age Group`, `Education Level`) %>% 
+  count() %>% 
+  ggplot(aes(x = `Age Group`, y = n, fill = E)) + 
+  geom_col() + 
+  facet_wrap(~`Education Level`, scales = "fixed", shrink = TRUE, nrow = 2) +
+  theme_light() + 
+          labs(title = "Wife-Beating Justification: E",
+               subtitle = "by ..",
+               x = "Age Group",
+               y = "Number of Respondents",
+               fill = "Response")  +
+          scale_fill_manual("Response", values = c("Yes" = "deepskyblue4", "No" = "skyblue2")) +
+  theme(title = element_text(size = 12, colour = "steelblue4", face = "bold"),
+        legend.text = element_text(size = 10, colour = "grey55"),
+                strip.text = element_text(size = 12, face = "bold"),
+                panel.grid = element_line(colour = "lightgray"),
+                legend.title = element_text(size = 12, colour = "steelblue4"),
+                legend.justification = c("right", "top"),
+                legend.position = "right",
+                axis.title.x = element_text(size = 12, vjust = -0.4, colour = "steelblue4"), 
+                axis.title.y = element_text(size = 12, vjust = 0.4, colour = "steelblue4"))
+
+
+```
+
+```{r}
+
+justification_2002 <-
+  dhs_2002_2 %>% 
+  select("CASEID", 
+         "Year of Interview" = "V007",
+         "Age" = "V012", 
+         "Age Group" = "V013", 
+         "Education Level" = "V106", 
+         "Region" = "V024",  
+         "Selected for Domestic Violence Module" = "V044", 
+         "Marital Status" = "V501",
+         "A" = "V744A",
+         "B" = "V744B",
+          "C" = "V744C",
+          "D" = "V744D",
+          "E" = "V744E") %>% 
+  mutate(A = case_when(
+    A == "0" ~ "No",
+    A == "1" ~ "Yes",
+    A == "8" ~ "Don't Know")) %>% 
+   mutate(B = case_when(
+    B == "0" ~ "No",
+    B == "1" ~ "Yes",
+    B == "8" ~ "Don't Know")) %>% 
+   mutate(C = case_when(
+    C == "0" ~ "No",
+    C == "1" ~ "Yes",
+    C == "8" ~ "Don't Know")) %>% 
+   mutate(D = case_when(
+    D == "0" ~ "No",
+    D == "1" ~ "Yes",
+    D == "8" ~ "Don't Know")) %>% 
+   mutate(E = case_when(
+    E == "0" ~ "No",
+    E == "1" ~ "Yes",
+    E == "8" ~ "Don't Know"))  %>% 
+  mutate(`Age Group` = case_when(
+    `Age Group` == "1" ~ "15-19",
+    `Age Group` == "2" ~ "20-24",
+     `Age Group` == "3" ~ "25-29",
+     `Age Group` == "4" ~ "30-34",
+     `Age Group` == "5" ~ "35-39",
+     `Age Group` == "6" ~ "40-44",
+     `Age Group` == "7" ~ "45-49")) %>% 
+  mutate(`Education Level` = case_when(
+    `Education Level` == "0" ~ "No Education",
+    `Education Level` == "1" ~ "Primary",
+    `Education Level` == "2" ~ "Secondary",
+    `Education Level` == "3" ~ "Higher"))
+
+justification_2002$`Education Level` <- 
+  factor(justification_2002$`Education Level`, levels = c("No Education", "Primary", "Secondary", "Higher"))
+
+
+write_rds(justification_2002, "justification_02.rds")
+
+A_2002 <- 
+justification_2002 %>% 
+  filter(!A == "Don't Know") %>% 
+  group_by(A, `Age Group`, `Education Level`) %>% 
+  count() %>% 
+  ggplot(aes(x = `Age Group`, y = n, fill = A)) + 
+  geom_col() + 
+  facet_wrap(~`Education Level`, scales = "fixed", shrink = TRUE, nrow = 2) +
+  theme_light() + 
+          labs(title = "Wife-Beating Justification: A",
+               subtitle = "by ..",
+               x = "Age Group",
+               y = "Number of Respondents",
+               fill = "Response")  +
+          scale_fill_manual("Response", values = c("Yes" = "deepskyblue4", "No" = "skyblue2")) +
+  theme(title = element_text(size = 12, colour = "steelblue4", face = "bold"),
+        legend.text = element_text(size = 10, colour = "grey55"),
+                strip.text = element_text(size = 12, face = "bold"),
+                panel.grid = element_line(colour = "lightgray"),
+                legend.title = element_text(size = 12, colour = "steelblue4"),
+                legend.justification = c("right", "top"),
+                legend.position = "right",
+                axis.title.x = element_text(size = 12, vjust = -0.4, colour = "steelblue4"), 
+                axis.title.y = element_text(size = 12, vjust = 0.4, colour = "steelblue4"))
+
+B_2002 <-
+justification_2002 %>% 
+  filter(!B == "Don't Know") %>% 
+  group_by(B, `Age Group`, `Education Level`) %>% 
+  count() %>% 
+  ggplot(aes(x = `Age Group`, y = n, fill = B)) + 
+  geom_col() + 
+  facet_wrap(~`Education Level`, scales = "fixed", shrink = TRUE, nrow = 2) +
+  theme_light() + 
+          labs(title = "Wife-Beating Justification: B",
+               subtitle = "by ..",
+               x = "Age Group",
+               y = "Number of Respondents",
+               fill = "Response")  +
+          scale_fill_manual("Response", values = c("Yes" = "deepskyblue4", "No" = "skyblue2")) +
+  theme(title = element_text(size = 12, colour = "steelblue4", face = "bold"),
+        legend.text = element_text(size = 10, colour = "grey55"),
+                strip.text = element_text(size = 12, face = "bold"),
+                panel.grid = element_line(colour = "lightgray"),
+                legend.title = element_text(size = 12, colour = "steelblue4"),
+                legend.justification = c("right", "top"),
+                legend.position = "right",
+                axis.title.x = element_text(size = 12, vjust = -0.4, colour = "steelblue4"), 
+                axis.title.y = element_text(size = 12, vjust = 0.4, colour = "steelblue4"))
+C_2002 <-
+justification_2002 %>% 
+  filter(!C == "Don't Know") %>% 
+  group_by(C, `Age Group`, `Education Level`) %>% 
+  count() %>% 
+  ggplot(aes(x = `Age Group`, y = n, fill = C)) + 
+  geom_col() + 
+  facet_wrap(~`Education Level`, scales = "fixed", shrink = TRUE, nrow = 2) +
+  theme_light() + 
+          labs(title = "Wife-Beating Justification: C",
+               subtitle = "by ..",
+               x = "Age Group",
+               y = "Number of Respondents",
+               fill = "Response")  +
+          scale_fill_manual("Response", values = c("Yes" = "deepskyblue4", "No" = "skyblue2")) +
+  theme(title = element_text(size = 12, colour = "steelblue4", face = "bold"),
+        legend.text = element_text(size = 10, colour = "grey55"),
+                strip.text = element_text(size = 12, face = "bold"),
+                panel.grid = element_line(colour = "lightgray"),
+                legend.title = element_text(size = 12, colour = "steelblue4"),
+                legend.justification = c("right", "top"),
+                legend.position = "right",
+                axis.title.x = element_text(size = 12, vjust = -0.4, colour = "steelblue4"), 
+                axis.title.y = element_text(size = 12, vjust = 0.4, colour = "steelblue4"))
+
+D_2002 <-
+justification_2002 %>% 
+  filter(!D == "Don't Know") %>% 
+  group_by(D, `Age Group`, `Education Level`) %>% 
+  count() %>% 
+  ggplot(aes(x = `Age Group`, y = n, fill = D)) + 
+  geom_col() + 
+  facet_wrap(~`Education Level`, scales = "fixed", shrink = TRUE, nrow = 2) +
+  theme_light() + 
+          labs(title = "Wife-Beating Justification: D",
+               subtitle = "by ..",
+               x = "Age Group",
+               y = "Number of Respondents",
+               fill = "Response")  +
+          scale_fill_manual("Response", values = c("Yes" = "deepskyblue4", "No" = "skyblue2")) +
+  theme(title = element_text(size = 12, colour = "steelblue4", face = "bold"),
+        legend.text = element_text(size = 10, colour = "grey55"),
+                strip.text = element_text(size = 12, face = "bold"),
+                panel.grid = element_line(colour = "lightgray"),
+                legend.title = element_text(size = 12, colour = "steelblue4"),
+                legend.justification = c("right", "top"),
+                legend.position = "right",
+                axis.title.x = element_text(size = 12, vjust = -0.4, colour = "steelblue4"), 
+                axis.title.y = element_text(size = 12, vjust = 0.4, colour = "steelblue4"))
+
+E_2002 <-
+justification_2002 %>% 
+  filter(!E == "Don't Know") %>% 
+  group_by(E, `Age Group`, `Education Level`) %>% 
+  count() %>% 
+  ggplot(aes(x = `Age Group`, y = n, fill = E)) + 
+  geom_col() + 
+  facet_wrap(~`Education Level`, scales = "fixed", shrink = TRUE, nrow = 2) +
+  theme_light() + 
+          labs(title = "Wife-Beating Justification: E",
+               subtitle = "by ..",
+               x = "Age Group",
+               y = "Number of Respondents",
+               fill = "Response")  +
+          scale_fill_manual("Response", values = c("Yes" = "deepskyblue4", "No" = "skyblue2")) +
+  theme(title = element_text(size = 12, colour = "steelblue4", face = "bold"),
+        legend.text = element_text(size = 10, colour = "grey55"),
+                strip.text = element_text(size = 12, face = "bold"),
+                panel.grid = element_line(colour = "lightgray"),
+                legend.title = element_text(size = 12, colour = "steelblue4"),
+                legend.justification = c("right", "top"),
+                legend.position = "right",
+                axis.title.x = element_text(size = 12, vjust = -0.4, colour = "steelblue4"), 
+                axis.title.y = element_text(size = 12, vjust = 0.4, colour = "steelblue4"))
+
+
+```
+
+ˆ
+```{r}
+
+emotional_violence <- 
+  dhs_2012_2 %>% 
+  filter(V044 == "1") %>% 
+  select("CASEID", 
+         "Year of Interview" = "V007",
+         "Age" = "V012", 
+         "Age Group" = "V013", 
+         "Education Level" = "V106", 
+         "Region" = "V024", 
+         -starts_with("V744"), 
+         contains("D103"),
+         D104)  %>% 
+mutate(D104 = case_when(
+    D104 == "0" ~ "No",
+    D104 == "1" ~ "Yes")) 
+
+percent_emotion <- 
+  emotional_violence %>% 
+    group_by(D104) %>% 
+    count() %>% 
+    summarize(total = sum(n)) %>% 
+    mutate(percent = total/7027*100) %>% 
+    select("ID" = "D104", "Percent Emotional" = "percent")
+
+  
+physical_violence <- 
+  dhs_2012_2 %>% 
+  filter(V044 == "1") %>% 
+  select("CASEID", 
+         "Year of Interview" = "V007",
+         "Age" = "V012", 
+         "Age Group" = "V013", 
+         "Education Level" = "V106", 
+         "Region" = "V024", 
+         -starts_with("V744"), 
+         contains("D105"),
+         D106, D107) %>% 
+  mutate(D106 = replace_na(D106, 0)) %>% 
+mutate(D106 = case_when(
+    D106 == "0" ~ "No",
+    D106 == "1" ~ "Yes")) 
+  
+
+percent_physical <- 
+  physical_violence %>% 
+    group_by(D106) %>% 
+    count() %>% 
+    summarize(total = sum(n)) %>% 
+    mutate(percent = total/7027*100) %>% 
+    select("ID" = "D106", "Percent Physical" = "percent")
+
+sexual_violence <- 
+  dhs_2012_2 %>% 
+  filter(V044 == "1") %>% 
+  select("CASEID", 
+         "Year of Interview" = "V007",
+         "Age" = "V012", 
+         "Age Group" = "V013", 
+         "Education Level" = "V106", 
+         "Region" = "V024", 
+         -starts_with("V744"),
+         D108) %>% 
+mutate(D108 = replace_na(D108, 0)) %>% 
+mutate(D108 = case_when(
+    D108 == "0" ~ "No",
+    D108 == "1" ~ "Yes")) 
+
+
+percent_sexual <- 
+  sexual_violence %>% 
+    group_by(D108) %>% 
+    count() %>% 
+    summarize(total = sum(n)) %>% 
+    mutate(percent = total/7027*100) %>% 
+    select("ID" = "D108", "Percent Sexual" = "percent")
+
+
+join_1 <-
+inner_join(percent_emotion, percent_physical, by = "ID") 
+
+join_2 <-
+  inner_join(join_1, percent_sexual, by = "ID")
+
+a <-
+  join_2 %>% 
+  select("Response" = "ID", "Percent Emotional", "Percent Physical", "Percent Sexual") 
+
+data_new <-
+gather(a, key = "Type", value = "Percent", c("Percent Emotional", "Percent Physical", "Percent Sexual")) %>% 
+  mutate(Type = case_when(
+    Type == "Percent Emotional" ~ "Emotional Violence",
+    Type == "Percent Physical" ~ "Physical Violence",
+    Type == "Percent Sexual" ~ "Sexual Violence"))
+
+
+write_rds(data_new, "violence.rds")
+
+  
+```
+
+```{r}
+
+physical_all <- 
+  physical_violence %>% 
+  mutate(D105A = case_when(
+    D105A == "0" ~ "Never",
+    D105A == "1" ~ "Often",
+    D105A == "2" ~ "Sometimes",
+    D105A == "3" ~ "Yes, but not in the last 12 months",
+    D105A == "4" ~ "Yes, in the last 12 months")) %>% 
+  mutate(D105B = case_when(
+    D105B == "0" ~ "Never",
+    D105B == "1" ~ "Often",
+    D105B == "2" ~ "Sometimes",
+    D105B == "3" ~ "Yes, but not in the last 12 months",
+    D105B == "4" ~ "Yes, in the last 12 months")) %>% 
+  mutate(D105C = case_when(
+    D105C == "0" ~ "Never",
+    D105C == "1" ~ "Often",
+    D105C == "2" ~ "Sometimes",
+    D105C == "3" ~ "Yes, but not in the last 12 months",
+    D105C == "4" ~ "Yes, in the last 12 months")) %>% 
+  mutate(D105D = case_when(
+    D105D == "0" ~ "Never",
+    D105D == "1" ~ "Often",
+    D105D == "2" ~ "Sometimes",
+    D105D == "3" ~ "Yes, but not in the last 12 months",
+    D105D == "4" ~ "Yes, in the last 12 months")) %>% 
+  mutate(D105E = case_when(
+    D105E == "0" ~ "Never",
+    D105E == "1" ~ "Often",
+    D105E == "2" ~ "Sometimes",
+    D105E == "3" ~ "Yes, but not in the last 12 months",
+    D105E == "4" ~ "Yes, in the last 12 months")) %>% 
+  mutate(D105F = case_when(
+    D105F == "0" ~ "Never",
+    D105F == "1" ~ "Often",
+    D105F == "2" ~ "Sometimes",
+    D105F == "3" ~ "Yes, but not in the last 12 months",
+    D105F == "4" ~ "Yes, in the last 12 months")) %>% 
+  mutate(D105H = case_when(
+    D105H == "0" ~ "Never",
+    D105H == "1" ~ "Often",
+    D105H == "2" ~ "Sometimes",
+    D105H == "3" ~ "Yes, but not in the last 12 months",
+    D105H == "4" ~ "Yes, in the last 12 months")) %>% 
+   mutate(D105J = case_when(
+    D105J == "0" ~ "Never",
+    D105J == "1" ~ "Often",
+    D105J == "2" ~ "Sometimes",
+    D105J == "3" ~ "Yes, but not in the last 12 months",
+    D105J == "4" ~ "Yes, in the last 12 months")) %>% 
+  select(-D105G, -D105I, -D105K, -D105L, -D105M, -D105N, -D106, -D107) %>% 
+  mutate(`Age Group` = case_when(
+    `Age Group` == "1" ~ "15-19",
+    `Age Group` == "2" ~ "20-24",
+     `Age Group` == "3" ~ "25-29",
+     `Age Group` == "4" ~ "30-34",
+     `Age Group` == "5" ~ "35-39",
+     `Age Group` == "6" ~ "40-44",
+     `Age Group` == "7" ~ "45-49")) %>% 
+  mutate(`Education Level` = case_when(
+    `Education Level` == "0" ~ "No Education",
+    `Education Level` == "1" ~ "Primary",
+    `Education Level` == "2" ~ "Secondary",
+    `Education Level` == "3" ~ "Higher")) %>% 
+  mutate(Region = case_when(
+    Region == "1" ~ "Central",
+    Region == "2" ~ "North",
+    Region == "3" ~ "South"))
+  
+
+
+
+```
+
+```{r}
+
+new <-
+physical_all %>% 
+  gather(key = "Type", value = "N", c("D105A","D105B", "D105C", "D105D", "D105E", "D105F", "D105H", "D105J")) %>% 
+  select("Age Group", "Education Level", "Region", "Type", "Response" = "N") %>% 
+  mutate(Type = case_when(
+    Type == "D105A" ~ "Spouse ever pushed, shook or threw something",
+    Type == "D105B" ~ "Spouse ever slapped",
+    Type == "D105C" ~ "Spouse ever punched with fist or something harmful",
+    Type == "D105D" ~ "Spouse ever kicked or dragged",
+    Type == "D105E" ~ "Spouse ever tried to strangle or burn",
+    Type == "D105F" ~ "Spouse ever threatened with knife/gun or other weapon",
+    Type == "D105H" ~ "Spouse ever physically forced sex when not wanted",
+    Type == "D105J" ~ "Spouse ever twisted her arm or pulled her hair"))
+
+
+write_rds(new, "new.rds")
+
+
+
+```
+
+```{r}
+
+
+new$`Education Level` <- 
+  factor(new$`Education Level`, levels = c("No Education", "Primary", "Secondary", "Higher"))
+
+age <-
+  new %>% 
+  filter(!Response == "Never") %>% 
+  group_by(`Age Group`, Type) %>% 
+  count() %>% 
+  spread(`Type`, n) %>% 
+  select("Demographic" = "Age Group", everything())
+
+region <-
+  new %>% 
+  filter(!Response == "Never") %>% 
+  group_by(Type, Region) %>% 
+  count() %>% 
+  spread(`Type`, n) %>% 
+  select("Demographic" = "Region", everything())
+
+education <-
+  new %>% 
+  filter(!Response == "Never") %>% 
+  group_by(Type, `Education Level`) %>% 
+  count() %>% 
+  spread(`Type`, n) %>% 
+  select("Demographic" = "Education Level", everything())
+  
+```
+
+
+```{r}
+
+bind <- 
+  rbind(age, region, education)
+
+write_rds(bind, "bind.rds")
+```
+
+```{r}
+
+
+bind %>%  
+kable(
+        align = c(rep('c', 1), rep("c", 9))) %>%
+  kable_styling(bootstrap_options = "hover", 
+                position = "center", 
+                row_label_position = "c", 
+                font_size = 14, 
+                full_width = FALSE) %>% 
+  row_spec(0, bold = F, color = "black", font_size = 12) %>% 
+  column_spec(1, width = "7em", bold = T) %>% 
+  column_spec(2:9, width = "30em") %>% 
+  group_rows("Age Group", 1, 7, 
+             label_row_css = "no-border-bottom; float:left; color: #37778f;") %>% 
+  group_rows("Region", 8, 10, 
+             label_row_css = "no-border-bottom; float:left; padding-top: 20px; color: #37778f;") %>% 
+  group_rows("Education", 11, 14, 
+             label_row_css = "no-border-bottom; float:left; padding-top: 20px;  color: #37778f;") 
+
+
+```
+
+```{r}
+
+  emotional_violence_2007 <- 
+  dhs_2007_2 %>% 
+  filter(V044 == "1") %>% 
+  select("CASEID", 
+         "Year of Interview" = "V007",
+         "Age" = "V012", 
+         "Age Group" = "V013", 
+         "Education Level" = "V106", 
+         "Region" = "V024", 
+         -starts_with("V744"), 
+         contains("D103"),
+         D104)  %>% 
+mutate(D104 = case_when(
+    D104 == "0" ~ "No",
+    D104 == "1" ~ "Yes")) 
+
+percent_emotion_2007 <- 
+  emotional_violence_2007 %>% 
+    group_by(D104) %>% 
+    count() %>% 
+    summarize(total = sum(n)) %>% 
+    mutate(percent = total/3444*100) %>% 
+    select("ID" = "D104", "Percent Emotional" = "percent")
+
+  
+physical_violence_2007 <- 
+  dhs_2007_2 %>% 
+  filter(V044 == "1") %>% 
+  select("CASEID", 
+         "Year of Interview" = "V007",
+         "Age" = "V012", 
+         "Age Group" = "V013", 
+         "Education Level" = "V106", 
+         "Region" = "V024", 
+         -starts_with("V744"), 
+         contains("D105"),
+         D106, D107) %>% 
+  mutate(D106 = replace_na(D106, 0)) %>% 
+mutate(D106 = case_when(
+    D106 == "0" ~ "No",
+    D106 == "1" ~ "Yes")) 
+  
+
+percent_physical_2007 <- 
+  physical_violence_2007 %>% 
+    group_by(D106) %>% 
+    count() %>% 
+    summarize(total = sum(n)) %>% 
+    mutate(percent = total/3444*100) %>% 
+    select("ID" = "D106", "Percent Physical" = "percent")
+
+sexual_violence_2007 <- 
+  dhs_2007_2 %>% 
+  filter(V044 == "1") %>% 
+  select("CASEID", 
+         "Year of Interview" = "V007",
+         "Age" = "V012", 
+         "Age Group" = "V013", 
+         "Education Level" = "V106", 
+         "Region" = "V024", 
+         -starts_with("V744"),
+         D108) %>% 
+mutate(D108 = replace_na(D108, 0)) %>% 
+mutate(D108 = case_when(
+    D108 == "0" ~ "No",
+    D108 == "1" ~ "Yes")) 
+
+
+percent_sexual_2007 <- 
+  sexual_violence_2007 %>% 
+    group_by(D108) %>% 
+    count() %>% 
+    summarize(total = sum(n)) %>% 
+    mutate(percent = total/3444*100) %>% 
+    select("ID" = "D108", "Percent Sexual" = "percent")
+
+
+join_1_2007 <-
+inner_join(percent_emotion_2007, percent_physical_2007, by = "ID") 
+
+join_2_2007 <-
+  inner_join(join_1_2007, percent_sexual_2007, by = "ID")
+
+a_2007 <-
+  join_2_2007 %>% 
+  select("Response" = "ID", "Percent Emotional", "Percent Physical", "Percent Sexual") 
+
+data_new_2007 <-
+gather(a_2007, key = "Type", value = "Percent", c("Percent Emotional", "Percent Physical", "Percent Sexual")) %>% 
+  mutate(Type = case_when(
+    Type == "Percent Emotional" ~ "Emotional Violence",
+    Type == "Percent Physical" ~ "Physical Violence",
+    Type == "Percent Sexual" ~ "Sexual Violence"))
+
+write_rds(data_new_2007, "violence_2007.rds")
+
+```
+
+```{r}
+
+physical_all_2007 <- 
+  physical_violence_2007 %>% 
+  mutate(D105A = case_when(
+    D105A == "0" ~ "Never",
+    D105A == "1" ~ "Often",
+    D105A == "2" ~ "Sometimes",
+    D105A == "3" ~ "Yes, but not in the last 12 months",
+    D105A == "4" ~ "Yes, in the last 12 months")) %>% 
+  mutate(D105B = case_when(
+    D105B == "0" ~ "Never",
+    D105B == "1" ~ "Often",
+    D105B == "2" ~ "Sometimes",
+    D105B == "3" ~ "Yes, but not in the last 12 months",
+    D105B == "4" ~ "Yes, in the last 12 months")) %>% 
+  mutate(D105C = case_when(
+    D105C == "0" ~ "Never",
+    D105C == "1" ~ "Often",
+    D105C == "2" ~ "Sometimes",
+    D105C == "3" ~ "Yes, but not in the last 12 months",
+    D105C == "4" ~ "Yes, in the last 12 months")) %>% 
+  mutate(D105D = case_when(
+    D105D == "0" ~ "Never",
+    D105D == "1" ~ "Often",
+    D105D == "2" ~ "Sometimes",
+    D105D == "3" ~ "Yes, but not in the last 12 months",
+    D105D == "4" ~ "Yes, in the last 12 months")) %>% 
+  mutate(D105E = case_when(
+    D105E == "0" ~ "Never",
+    D105E == "1" ~ "Often",
+    D105E == "2" ~ "Sometimes",
+    D105E == "3" ~ "Yes, but not in the last 12 months",
+    D105E == "4" ~ "Yes, in the last 12 months")) %>% 
+  mutate(D105F = case_when(
+    D105F == "0" ~ "Never",
+    D105F == "1" ~ "Often",
+    D105F == "2" ~ "Sometimes",
+    D105F == "3" ~ "Yes, but not in the last 12 months",
+    D105F == "4" ~ "Yes, in the last 12 months")) %>% 
+  mutate(D105H = case_when(
+    D105H == "0" ~ "Never",
+    D105H == "1" ~ "Often",
+    D105H == "2" ~ "Sometimes",
+    D105H == "3" ~ "Yes, but not in the last 12 months",
+    D105H == "4" ~ "Yes, in the last 12 months")) %>% 
+   mutate(D105J = case_when(
+    D105J == "0" ~ "Never",
+    D105J == "1" ~ "Often",
+    D105J == "2" ~ "Sometimes",
+    D105J == "3" ~ "Yes, but not in the last 12 months",
+    D105J == "4" ~ "Yes, in the last 12 months")) %>% 
+  select(-D105G, -D105I, -D105K, -D105L, -D105M, -D105N, -D106, -D107) %>% 
+  mutate(`Age Group` = case_when(
+    `Age Group` == "1" ~ "15-19",
+    `Age Group` == "2" ~ "20-24",
+     `Age Group` == "3" ~ "25-29",
+     `Age Group` == "4" ~ "30-34",
+     `Age Group` == "5" ~ "35-39",
+     `Age Group` == "6" ~ "40-44",
+     `Age Group` == "7" ~ "45-49")) %>% 
+  mutate(`Education Level` = case_when(
+    `Education Level` == "0" ~ "No Education",
+    `Education Level` == "1" ~ "Primary",
+    `Education Level` == "2" ~ "Secondary",
+    `Education Level` == "3" ~ "Higher")) %>% 
+  mutate(Region = case_when(
+    Region == "1" ~ "Central",
+    Region == "2" ~ "North",
+    Region == "3" ~ "South"))
+  
+
+
+
+```
+
+```{r}
+
+new_2007 <-
+physical_all_2007 %>% 
+  gather(key = "Type", value = "N", c("D105A","D105B", "D105C", "D105D", "D105E", "D105F", "D105H", "D105J")) %>% 
+  select("Age Group", "Education Level", "Region", "Type", "Response" = "N") %>% 
+  mutate(Type = case_when(
+    Type == "D105A" ~ "Spouse ever pushed, shook or threw something",
+    Type == "D105B" ~ "Spouse ever slapped",
+    Type == "D105C" ~ "Spouse ever punched with fist or something harmful",
+    Type == "D105D" ~ "Spouse ever kicked or dragged",
+    Type == "D105E" ~ "Spouse ever tried to strangle or burn",
+    Type == "D105F" ~ "Spouse ever threatened with knife/gun or other weapon",
+    Type == "D105H" ~ "Spouse ever physically forced sex when not wanted",
+    Type == "D105J" ~ "Spouse ever twisted her arm or pulled her hair"))
+
+
+
+
+
+```
+
+```{r}
+
+
+new_2007$`Education Level` <- 
+  factor(new_2007$`Education Level`, levels = c("No Education", "Primary", "Secondary", "Higher"))
+
+age_2007 <-
+  new_2007 %>% 
+  filter(!Response == "Never") %>% 
+  group_by(`Age Group`, Type) %>% 
+  count() %>% 
+  spread(`Type`, n) %>% 
+  select("Demographic" = "Age Group", everything())
+
+region_2007 <-
+  new_2007 %>% 
+  filter(!Response == "Never") %>% 
+  group_by(Type, Region) %>% 
+  count() %>% 
+  spread(`Type`, n) %>% 
+  select("Demographic" = "Region", everything())
+
+education_2007 <-
+  new_2007 %>% 
+  filter(!Response == "Never") %>% 
+  group_by(Type, `Education Level`) %>% 
+  count() %>% 
+  spread(`Type`, n) %>% 
+  select("Demographic" = "Education Level", everything())
+  
+```
+
+
+```{r}
+
+bind_2007 <- 
+  rbind(age_2007, region_2007, education_2007) %>% 
+  drop_na()
+
+write_rds(bind_2007, "bind_2007.rds")
+```
+
+```{r}
+
+
+bind_2007 %>%  
+kable(align = c(rep('c', 1), rep("c", 9))) %>%
+  kable_styling(bootstrap_options = "hover", 
+                position = "center", 
+                row_label_position = "c", 
+                font_size = 14, 
+                full_width = FALSE) %>% 
+  row_spec(0, bold = F, color = "black", font_size = 12) %>% 
+  column_spec(1, width = "7em", bold = T) %>% 
+  column_spec(2:8, width = "15em") %>% 
+  group_rows("Age Group", 1, 6, 
+             label_row_css = "no-border-bottom; float:left; color: #37778f;") %>% 
+  group_rows("Region", 7, 9, 
+             label_row_css = "no-border-bottom; float:left; padding-top: 20px; color: #37778f;") %>% 
+  group_rows("Education", 10, 13, 
+             label_row_css = "no-border-bottom; float:left; padding-top: 20px;  color: #37778f;") 
+
+
+```
+
+```{r}
+
+ 
+clean_data_12 <-
+  dhs_2012_2 %>% 
+  filter(V044 == 1) %>% 
+  select("CASEID", 
+         "Year of Interview" = "V007",
+         "Age" = "V012", 
+         "Age Group" = "V013", 
+         "Education Level" = "V106", 
+         "Region" = "V024",  
+         "Selected for Domestic Violence Module" = "V044", 
+         "Marital Status" = "V501",
+        "A" = "V744A",
+         "B" = "V744B",
+          "C" = "V744C",
+          "D" = "V744D",
+          "E" = "V744E",
+        contains("D105"),
+        -D105G,
+        -D105I,
+        -D105K,
+        -D105L,
+        -D105M,
+        -D105N,
+        D108,
+        D106,
+        D104) %>% 
+  mutate(A = case_when(
+    A == "0" ~ "No",
+    A == "1" ~ "Yes",
+    A == "8" ~ "Don't Know")) %>% 
+   mutate(B = case_when(
+    B == "0" ~ "No",
+    B == "1" ~ "Yes",
+    B == "8" ~ "Don't Know")) %>% 
+   mutate(C = case_when(
+    C == "0" ~ "No",
+    C == "1" ~ "Yes",
+    C == "8" ~ "Don't Know")) %>% 
+   mutate(D = case_when(
+    D == "0" ~ "No",
+    D == "1" ~ "Yes",
+    D == "8" ~ "Don't Know")) %>% 
+   mutate(E = case_when(
+    E == "0" ~ "No",
+    E == "1" ~ "Yes",
+    E == "8" ~ "Don't Know")) %>% 
+  mutate(`Age Group` = case_when(
+    `Age Group` == "1" ~ "15-19",
+    `Age Group` == "2" ~ "20-24",
+     `Age Group` == "3" ~ "25-29",
+     `Age Group` == "4" ~ "30-34",
+     `Age Group` == "5" ~ "35-39",
+     `Age Group` == "6" ~ "40-44",
+     `Age Group` == "7" ~ "45-49")) %>% 
+  mutate(`Education Level` = case_when(
+    `Education Level` == "0" ~ "No Education",
+    `Education Level` == "1" ~ "Primary",
+    `Education Level` == "2" ~ "Secondary",
+    `Education Level` == "3" ~ "Higher")) %>% 
+  mutate(D105A = case_when(
+    D105A == "0" ~ "Never",
+    D105A == "1" ~ "Often",
+    D105A == "2" ~ "Sometimes",
+    D105A == "3" ~ "Yes, but not in the last 12 months",
+    D105A == "4" ~ "Yes, in the last 12 months")) %>% 
+  mutate(D105B = case_when(
+    D105B == "0" ~ "Never",
+    D105B == "1" ~ "Often",
+    D105B == "2" ~ "Sometimes",
+    D105B == "3" ~ "Yes, but not in the last 12 months",
+    D105B == "4" ~ "Yes, in the last 12 months")) %>% 
+  mutate(D105C = case_when(
+    D105C == "0" ~ "Never",
+    D105C == "1" ~ "Often",
+    D105C == "2" ~ "Sometimes",
+    D105C == "3" ~ "Yes, but not in the last 12 months",
+    D105C == "4" ~ "Yes, in the last 12 months")) %>% 
+  mutate(D105D = case_when(
+    D105D == "0" ~ "Never",
+    D105D == "1" ~ "Often",
+    D105D == "2" ~ "Sometimes",
+    D105D == "3" ~ "Yes, but not in the last 12 months",
+    D105D == "4" ~ "Yes, in the last 12 months")) %>% 
+  mutate(D105E = case_when(
+    D105E == "0" ~ "Never",
+    D105E == "1" ~ "Often",
+    D105E == "2" ~ "Sometimes",
+    D105E == "3" ~ "Yes, but not in the last 12 months",
+    D105E == "4" ~ "Yes, in the last 12 months")) %>% 
+  mutate(D105F = case_when(
+    D105F == "0" ~ "Never",
+    D105F == "1" ~ "Often",
+    D105F == "2" ~ "Sometimes",
+    D105F == "3" ~ "Yes, but not in the last 12 months",
+    D105F == "4" ~ "Yes, in the last 12 months")) %>% 
+  mutate(D105H = case_when(
+    D105H == "0" ~ "Never",
+    D105H == "1" ~ "Often",
+    D105H == "2" ~ "Sometimes",
+    D105H == "3" ~ "Yes, but not in the last 12 months",
+    D105H == "4" ~ "Yes, in the last 12 months")) %>% 
+   mutate(D105J = case_when(
+    D105J == "0" ~ "Never",
+    D105J == "1" ~ "Often",
+    D105J == "2" ~ "Sometimes",
+    D105J == "3" ~ "Yes, but not in the last 12 months",
+    D105J == "4" ~ "Yes, in the last 12 months")) %>% 
+mutate(D108 = replace_na(D108, 0)) %>%
+mutate(D108 = case_when(
+    D108 == "0" ~ "No",
+    D108 == "1" ~ "Yes")) %>%
+mutate(D106 = case_when(
+    D106 == "0" ~ "No",
+    D106 == "1" ~ "Yes")) %>% 
+mutate(D104 = case_when(
+    D104 == "0" ~ "No",
+    D104 == "1" ~ "Yes")) %>% 
+select(everything(), -D, -CASEID,
+    "Spouse ever pushed, shook or threw something" = "D105A", 
+         "Spouse ever slapped" = "D105B",
+         "Spouse ever punched with fist or something harmful" = "D105C",
+         "Spouse ever kicked or dragged" = "D105D",
+         "Spouse ever tried to strangle or burn" = "D105E",
+         "Spouse ever threatened with knife/gun or other weapon" = "D105F",
+         "Spouse ever physically forced sex when not wanted" = "D105H", 
+         "Spouse ever twisted her arm or pulled her hair" = "D105J",
+         "Wife-beating if: She goes out without telling him" = "A",
+         "Wife-beating if: She neglects the children" = "B",
+         "Wife-beating if: She argues with him" = "C",
+         "Wife-beating if: She burns the food" = "E",
+          "Any emotional violence" = "D104",
+     "Any physical violence (less severe and/or serious)" = "D106",
+     "Any sexual violence" = "D108")
+        
+write_rds(clean_data_12, "data_2012.rds")
+
+
+```
+
+```{r}
+
+clean_data_07 <-
+  dhs_2007_2 %>% 
+  filter(V044 == 1) %>% 
+  select("CASEID", 
+         "Year of Interview" = "V007",
+         "Age" = "V012", 
+         "Age Group" = "V013", 
+         "Education Level" = "V106", 
+         "Region" = "V024",  
+         "Selected for Domestic Violence Module" = "V044", 
+         "Marital Status" = "V501",
+        "A" = "V744A",
+         "B" = "V744B",
+          "C" = "V744C",
+          "D" = "V744D",
+          "E" = "V744E",
+        contains("D105"),
+        -D105G,
+        -D105I,
+        -D105K,
+        -D105L,
+        -D105M,
+        -D105N,
+        D108,
+        D106,
+        D104) %>% 
+  mutate(A = case_when(
+    A == "0" ~ "No",
+    A == "1" ~ "Yes",
+    A == "8" ~ "Don't Know")) %>% 
+   mutate(B = case_when(
+    B == "0" ~ "No",
+    B == "1" ~ "Yes",
+    B == "8" ~ "Don't Know")) %>% 
+   mutate(C = case_when(
+    C == "0" ~ "No",
+    C == "1" ~ "Yes",
+    C == "8" ~ "Don't Know")) %>% 
+   mutate(D = case_when(
+    D == "0" ~ "No",
+    D == "1" ~ "Yes",
+    D == "8" ~ "Don't Know")) %>% 
+   mutate(E = case_when(
+    E == "0" ~ "No",
+    E == "1" ~ "Yes",
+    E == "8" ~ "Don't Know")) %>% 
+  mutate(`Age Group` = case_when(
+    `Age Group` == "1" ~ "15-19",
+    `Age Group` == "2" ~ "20-24",
+     `Age Group` == "3" ~ "25-29",
+     `Age Group` == "4" ~ "30-34",
+     `Age Group` == "5" ~ "35-39",
+     `Age Group` == "6" ~ "40-44",
+     `Age Group` == "7" ~ "45-49")) %>% 
+  mutate(`Education Level` = case_when(
+    `Education Level` == "0" ~ "No Education",
+    `Education Level` == "1" ~ "Primary",
+    `Education Level` == "2" ~ "Secondary",
+    `Education Level` == "3" ~ "Higher")) %>% 
+  mutate(D105A = case_when(
+    D105A == "0" ~ "Never",
+    D105A == "1" ~ "Often",
+    D105A == "2" ~ "Sometimes",
+    D105A == "3" ~ "Yes, but not in the last 12 months",
+    D105A == "4" ~ "Yes, in the last 12 months")) %>% 
+  mutate(D105B = case_when(
+    D105B == "0" ~ "Never",
+    D105B == "1" ~ "Often",
+    D105B == "2" ~ "Sometimes",
+    D105B == "3" ~ "Yes, but not in the last 12 months",
+    D105B == "4" ~ "Yes, in the last 12 months")) %>% 
+  mutate(D105C = case_when(
+    D105C == "0" ~ "Never",
+    D105C == "1" ~ "Often",
+    D105C == "2" ~ "Sometimes",
+    D105C == "3" ~ "Yes, but not in the last 12 months",
+    D105C == "4" ~ "Yes, in the last 12 months")) %>% 
+  mutate(D105D = case_when(
+    D105D == "0" ~ "Never",
+    D105D == "1" ~ "Often",
+    D105D == "2" ~ "Sometimes",
+    D105D == "3" ~ "Yes, but not in the last 12 months",
+    D105D == "4" ~ "Yes, in the last 12 months")) %>% 
+  mutate(D105E = case_when(
+    D105E == "0" ~ "Never",
+    D105E == "1" ~ "Often",
+    D105E == "2" ~ "Sometimes",
+    D105E == "3" ~ "Yes, but not in the last 12 months",
+    D105E == "4" ~ "Yes, in the last 12 months")) %>% 
+  mutate(D105F = case_when(
+    D105F == "0" ~ "Never",
+    D105F == "1" ~ "Often",
+    D105F == "2" ~ "Sometimes",
+    D105F == "3" ~ "Yes, but not in the last 12 months",
+    D105F == "4" ~ "Yes, in the last 12 months")) %>% 
+  mutate(D105H = case_when(
+    D105H == "0" ~ "Never",
+    D105H == "1" ~ "Often",
+    D105H == "2" ~ "Sometimes",
+    D105H == "3" ~ "Yes, but not in the last 12 months",
+    D105H == "4" ~ "Yes, in the last 12 months")) %>% 
+   mutate(D105J = case_when(
+    D105J == "0" ~ "Never",
+    D105J == "1" ~ "Often",
+    D105J == "2" ~ "Sometimes",
+    D105J == "3" ~ "Yes, but not in the last 12 months",
+    D105J == "4" ~ "Yes, in the last 12 months")) %>% 
+mutate(D108 = replace_na(D108, 0)) %>%
+mutate(D108 = case_when(
+    D108 == "0" ~ "No",
+    D108 == "1" ~ "Yes")) %>%
+mutate(D106 = case_when(
+    D106 == "0" ~ "No",
+    D106 == "1" ~ "Yes")) %>% 
+mutate(D104 = case_when(
+    D104 == "0" ~ "No",
+    D104 == "1" ~ "Yes")) %>% 
+select(everything(), -D, -CASEID,
+    "Spouse ever pushed, shook or threw something" = "D105A", 
+         "Spouse ever slapped" = "D105B",
+         "Spouse ever punched with fist or something harmful" = "D105C",
+         "Spouse ever kicked or dragged" = "D105D",
+         "Spouse ever tried to strangle or burn" = "D105E",
+         "Spouse ever threatened with knife/gun or other weapon" = "D105F",
+         "Spouse ever physically forced sex when not wanted" = "D105H", 
+         "Spouse ever twisted her arm or pulled her hair" = "D105J",
+         "Wife-beating if: She goes out without telling him" = "A",
+         "Wife-beating if: She neglects the children" = "B",
+         "Wife-beating if: She argues with him" = "C",
+         "Wife-beating if: She burns the food" = "E",
+          "Any emotional violence" = "D104",
+     "Any physical violence (less severe and/or serious)" = "D106",
+     "Any sexual violence" = "D108")
+        
+write_rds(clean_data_07, "data_2007.rds")
+
+```
+
+```{r}
+
+clean_data_02 <-
+  dhs_2002_2 %>% 
+  select("CASEID", 
+         "Year of Interview" = "V007",
+         "Age" = "V012", 
+         "Age Group" = "V013", 
+         "Education Level" = "V106", 
+         "Region" = "V024", 
+         "Marital Status" = "V501",
+        "A" = "V744A",
+         "B" = "V744B",
+          "C" = "V744C",
+          "D" = "V744D",
+          "E" = "V744E") %>% 
+  mutate(A = case_when(
+    A == "0" ~ "No",
+    A == "1" ~ "Yes",
+    A == "8" ~ "Don't Know")) %>% 
+   mutate(B = case_when(
+    B == "0" ~ "No",
+    B == "1" ~ "Yes",
+    B == "8" ~ "Don't Know")) %>% 
+   mutate(C = case_when(
+    C == "0" ~ "No",
+    C == "1" ~ "Yes",
+    C == "8" ~ "Don't Know")) %>% 
+   mutate(D = case_when(
+    D == "0" ~ "No",
+    D == "1" ~ "Yes",
+    D == "8" ~ "Don't Know")) %>% 
+   mutate(E = case_when(
+    E == "0" ~ "No",
+    E == "1" ~ "Yes",
+    E == "8" ~ "Don't Know")) %>% 
+  mutate(`Age Group` = case_when(
+    `Age Group` == "1" ~ "15-19",
+    `Age Group` == "2" ~ "20-24",
+     `Age Group` == "3" ~ "25-29",
+     `Age Group` == "4" ~ "30-34",
+     `Age Group` == "5" ~ "35-39",
+     `Age Group` == "6" ~ "40-44",
+     `Age Group` == "7" ~ "45-49")) %>% 
+  mutate(`Education Level` = case_when(
+    `Education Level` == "0" ~ "No Education",
+    `Education Level` == "1" ~ "Primary",
+    `Education Level` == "2" ~ "Secondary",
+    `Education Level` == "3" ~ "Higher"))  %>% 
+select(everything(), -D, -CASEID,
+         "Wife-beating if: She goes out without telling him" = "A",
+         "Wife-beating if: She neglects the children" = "B",
+         "Wife-beating if: She argues with him" = "C",
+         "Wife-beating if: She burns the food" = "E")
+        
+   
+write_rds(clean_data_02, "data_2002.rds")
+
+```
+
+```{r}
+
+unicef_clean <-
+  unicef %>% 
+   select("Country" = "geoAreaName", "Age", "Sex" = "Sex_description", "X", "Y", 
+          "Percentage" = "latest_value", "Year" = "latest_year") %>% 
+  mutate(Sex = case_when(
+    Sex == "Female" ~ "female",
+    Sex == "Male" ~ "male")) %>% 
+  drop_na()
+
+
+unicef_clean_2 <-
+unicef_clean %>% 
+    mutate(Sex = case_when(
+    Sex == "female" ~ "Female",
+    Sex == "male" ~ "Male")) %>% 
+  select(Country, Year, Age, Sex, Percentage, -X, -Y) %>% 
+  arrange(desc(Year)) 
+    
+
+```
+
+```{r}
+unicef_table <-
+unicef_clean_2 %>% 
+  group_by(Sex, Year) %>% 
+  summarize(average = mean(Percentage)/100) %>% 
+  spread(Sex, average) %>% 
+  adorn_pct_formatting(digits = 2) %>% 
+  select(Year, "Average Percentage of Female-Identified Respondents that Experienced Sexual Violence Before Age of 18" = "Female", "Average Percentage of Male-Identified Respondents that Experienced Sexual Violence Before Age of 18" = "Male")
+
+
+unicef_table %>% 
+kable(align = c(rep('c', 1), rep("c", 2))) %>%
+  kable_styling(bootstrap_options = "hover", 
+                position = "center", 
+                row_label_position = "c", 
+                font_size = 14, 
+                full_width = FALSE) %>% 
+  row_spec(0, bold = F, color = "#37778f", font_size = 15) %>% 
+  column_spec(1, width = "7em", bold = T) %>% 
+  column_spec(2:3, width = "20em") 
+  
+```
+
+```{r}
+write_rds(justification_2012, "justification_12.rds")
+```
+
