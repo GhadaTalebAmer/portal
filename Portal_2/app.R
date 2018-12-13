@@ -22,17 +22,6 @@ library(leaflet.extras)
 library(kableExtra)
 
 
-unicef_clean <- read_csv("sample_data.csv") %>% 
-  select("Country" = "geoAreaName", "Age", "Sex" = "Sex_description", "X", "Y", 
-         "Percentage" = "latest_value", "Year" = "latest_year") %>% 
-  mutate(Sex = case_when(
-    Sex == "Female" ~ "female",
-    Sex == "Male" ~ "male")) %>% 
-  drop_na()
-
-
-
-
 justification_2012 <- read_rds("justification_12.rds")
 justification_2007 <- read_rds("justification_07.rds")
 justification_2002 <- read_rds("justification_02.rds")
@@ -167,14 +156,13 @@ ui <- fluidPage(theme = shinytheme("cerulean"),
                                  leafletOutput(outputId = "unicef_map", width = 1000),
                                  hr(),
                                  tableOutput(outputId = "unicef_table")),
-                        tabPanel(title = "Dataset",
-                                 dataTableOutput(outputId = "data_2002")),
+                        tabPanel(title = "Dataset"),
                         tabPanel(title = "Publications")))),
                   
                   
                   tabPanel(
                     title = "Resource Network",
-                    sidebarPanel(width = 2,
+                    sidebarPanel(width = 3,
                                  h5("Overview"),
                                  p("")),
                     mainPanel(
@@ -821,30 +809,6 @@ server <- function(input, output) {
     
   }
   
-  output$data_2012 <- renderDataTable({
-    
-    datatable(data_2012, 
-              caption = "A", 
-              selection = "none", 
-              width = "1000px",
-              style = "jqueryui")  })
-  
-  
-  output$data_2007 <- renderDataTable({
-    
-    datatable(data_2007, 
-              caption = "A", 
-              selection = "none", 
-              width = "1000px",
-              style = "jqueryui")  })
-  
-  output$data_2002 <- renderDataTable({
-    
-    datatable(data_2002, 
-              caption = "A", 
-              selection = "none", 
-              width = "1000px",
-              style = "jqueryui")  })
   
   
   output$unicef_map <- renderLeaflet({

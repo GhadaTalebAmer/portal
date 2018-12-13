@@ -46,8 +46,6 @@ unicef <- read_csv("sample_data.csv")
 
 ```{r}
 
-
-
 dhs_2012 <- read_spss("dhs_2012.sav")
 
 ```
